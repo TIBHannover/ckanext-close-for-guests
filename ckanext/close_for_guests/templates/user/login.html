@@ -1,0 +1,10 @@
+{% ckan_extends %}
+{% import 'macros/form.html' as form %}
+
+{% block page %}
+    {% if h.is_user_login() %}
+        {{ super() }}
+    {% else %}
+        {% snippet "snippets/close_for_guests_login_page.html", action='/login_generic?came_from=/user/logged_in' %}        
+    {% endif %}
+{% endblock %}

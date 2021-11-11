@@ -4,6 +4,11 @@
 <div class="row">
     <div class="col-sm-5 custom_logon_form_box">
         <form action="{{ action }}" method="post">
+            {% for message in h.flash.pop_messages() | list %}
+                <div class="alert fade in {{ message.category }}">
+                {{ h.literal(message) }}
+                </div>
+            {% endfor %}
             {{ form.input('login', label=_("Username"), id='field-login', value="", error=username_error, classes=["control-medium"]) }}
             {{ form.input('password', label=_("Password"), id='field-password', type="password", value="", error=password_error, classes=["control-medium"]) }}
             {{ form.checkbox('remember', label=_("Remember me"), id='field-remember', checked=true, value="63072000") }}
