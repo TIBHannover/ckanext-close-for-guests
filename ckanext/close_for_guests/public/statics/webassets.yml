@@ -1,0 +1,4 @@
+custom-login-form-css:
+  output: ckanext-close-for-guests/%(version)s_my.css
+  contents:
+    - loginForm.css

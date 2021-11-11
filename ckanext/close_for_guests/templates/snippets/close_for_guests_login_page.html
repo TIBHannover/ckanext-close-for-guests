@@ -1,0 +1,13 @@
+{% import 'macros/form.html' as form %}
+{% asset 'ckanext-close-for-guests/custom-login-form-css' %}
+
+<div class="row">
+    <div class="col-sm-4 custom_logon_form_box">
+        <form action="{{ action }}" method="post">
+            {{ form.input('login', label=_("Username"), id='field-login', value="", error=username_error, classes=["control-medium"]) }}
+            {{ form.input('password', label=_("Password"), id='field-password', type="password", value="", error=password_error, classes=["control-medium"]) }}
+            {{ form.checkbox('remember', label=_("Remember me"), id='field-remember', checked=true, value="63072000") }}
+            <button class="btn btn-primary" type="submit">{{ _('Login') }}</button>
+        </form>
+    </div>
+</div>
