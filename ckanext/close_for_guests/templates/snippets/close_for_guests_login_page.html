@@ -7,7 +7,12 @@
             {{ form.input('login', label=_("Username"), id='field-login', value="", error=username_error, classes=["control-medium"]) }}
             {{ form.input('password', label=_("Password"), id='field-password', type="password", value="", error=password_error, classes=["control-medium"]) }}
             {{ form.checkbox('remember', label=_("Remember me"), id='field-remember', checked=true, value="63072000") }}
-            <button class="btn btn-primary" type="submit">{{ _('Login') }}</button>
+            <br>
+            <div class="form-actions">
+                <a class="btn btn-default pull-left" href="{{ h.url_for('user.register') }}">{{ _('Create an Account') }}</a>
+                <a class="btn btn-default" href="{{ h.url_for('user.request_reset') }}">{{ _('Forgot your password?') }}</a>
+                <button class="btn btn-primary" type="submit">{{ _('Login') }}</button>
+            </div>
         </form>
     </div>
 </div>
