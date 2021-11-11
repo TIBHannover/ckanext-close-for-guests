@@ -1,6 +1,9 @@
 .custom_logon_form_box{
     background-color: aliceblue;
-    margin-top: 15%;
-    margin-left: 25%;
-    padding: 20px;
+    position: fixed;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 30px;
 }
+

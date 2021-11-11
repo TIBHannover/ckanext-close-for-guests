@@ -2,7 +2,7 @@
 {% asset 'ckanext-close-for-guests/custom-login-form-css' %}
 
 <div class="row">
-    <div class="col-sm-4 custom_logon_form_box">
+    <div class="col-sm-5 custom_logon_form_box">
         <form action="{{ action }}" method="post">
             {{ form.input('login', label=_("Username"), id='field-login', value="", error=username_error, classes=["control-medium"]) }}
             {{ form.input('password', label=_("Password"), id='field-password', type="password", value="", error=password_error, classes=["control-medium"]) }}
