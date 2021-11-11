@@ -1,0 +1,10 @@
+{% ckan_extends %}
+{% import 'macros/form.html' as form %}
+
+{% block content %}
+    {% if h.is_user_login() %}
+        {{ super() }}
+    {% else %}
+        {% snippet "user/snippets/login_form.html", action='/login_generic?came_from=/user/logged_in', error_summary=error_summary %}
+    {% endif %}
+{% endblock %}
