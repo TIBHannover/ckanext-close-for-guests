@@ -1,6 +1,6 @@
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
-from flask import redirect
+from flask import redirect, make_response
 import ckan.lib.helpers as h
 
 
@@ -14,7 +14,8 @@ def is_user_login():
 class CloseForGuestsPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.ITemplateHelpers)
-
+    
+    
     # IConfigurer
 
     def update_config(self, config_):
@@ -28,3 +29,6 @@ class CloseForGuestsPlugin(plugins.SingletonPlugin):
     def get_helpers(self):
         return {'is_user_login': is_user_login
         }
+    
+    
+    
