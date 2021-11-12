@@ -13,6 +13,8 @@ def excluded_path():
     path = toolkit.request.url
     if 'user/register' in path:
         return True
+    if 'user/reset' in path:
+        return True
     return False
 
 
