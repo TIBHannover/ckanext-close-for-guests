@@ -2,4 +2,12 @@
 
 {% block header %}{% endblock  %}
 {% block breadcrumb_content %}{% endblock %}
+{% block secondary_content %}
+    {{ super() }}
+    <div class=row>
+        <div class="col-sm-12" style="padding-left:30px;">
+            <a class="btn btn-default pull-left" href="{{ h.url_for('user.login') }}">{{ _('Back to Login') }}</a>
+        </div>
+    </div>
+{% endblock  %}
 {% block footer %}{% endblock  %}
