@@ -7,3 +7,19 @@
     padding: 30px;
 }
 
+.site-logo-box-on-login{
+    left: 10%;
+    overflow: hidden;
+}
+
+.site-logo-box-on-login > img{
+    float: left;
+}
+
+.site-logo-box-on-login > h3{
+    color: white;
+    display: block;
+    margin-left: 12%;
+    margin-top: 5%;
+    font-size: 30px;
+}
