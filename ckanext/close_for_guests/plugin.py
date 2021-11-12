@@ -9,6 +9,12 @@ def is_user_login():
         return True
     return False
 
+def excluded_path():
+    path = toolkit.request.url
+    if 'user/register' in path:
+        return True
+    return False
+
 
 
 class CloseForGuestsPlugin(plugins.SingletonPlugin):
@@ -27,7 +33,8 @@ class CloseForGuestsPlugin(plugins.SingletonPlugin):
     #ITemplateHelpers
 
     def get_helpers(self):
-        return {'is_user_login': is_user_login
+        return {'is_user_login': is_user_login,
+            'is_excluded': excluded_path
         }
     
     
