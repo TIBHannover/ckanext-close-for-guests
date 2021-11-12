@@ -20,9 +20,9 @@ def excluded_path():
 def get_login_action():
     ckan_root_path = toolkit.config.get('ckan.root_path')
     if  ckan_root_path and 'sfb1368/ckan' in ckan_root_path:
-        return "/sfb1368/ckan/login_generic?came_from=/user/logged_in"
+        return "/sfb1368/ckan/login_generic?came_from=/sfb1368/ckan/user/logged_in"
     elif ckan_root_path and 'sfb1153/ckan' in ckan_root_path:
-        return "/sfb1153/ckan/login_generic?came_from=/user/logged_in"
+        return "/sfb1153/ckan/login_generic?came_from=/sfb1153/ckan/user/logged_in"
     else:
         return "/login_generic?came_from=/user/logged_in"
 
