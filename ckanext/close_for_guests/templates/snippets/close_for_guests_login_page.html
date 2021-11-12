@@ -10,7 +10,7 @@
 
 <div class="row">
     <div class="col-sm-5 custom_logon_form_box">
-        <form action="{{ action }}" method="post">
+        <form action="{{ h.get_login_action() }}" method="post">
             {% for message in h.flash.pop_messages() | list %}
                 <div class="alert fade in {{ message.category }}">
                 {{ h.literal(message) }}

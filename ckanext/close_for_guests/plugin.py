@@ -17,6 +17,16 @@ def excluded_path():
         return True
     return False
 
+def get_login_action():
+    ckan_root_path = toolkit.config.get('ckan.root_path')
+    if  ckan_root_path and 'sfb1368/ckan' in ckan_root_path:
+        return "/sfb1368/ckan/login_generic?came_from=/user/logged_in"
+    elif ckan_root_path and 'sfb1153/ckan' in ckan_root_path:
+        return "/sfb1153/ckan/login_generic?came_from=/user/logged_in"
+    else:
+        return "/login_generic?came_from=/user/logged_in"
+
+
 
 
 class CloseForGuestsPlugin(plugins.SingletonPlugin):
@@ -36,7 +46,8 @@ class CloseForGuestsPlugin(plugins.SingletonPlugin):
 
     def get_helpers(self):
         return {'is_user_login': is_user_login,
-            'is_excluded': excluded_path
+            'is_excluded': excluded_path,
+            'get_login_action': get_login_action
         }
     
     

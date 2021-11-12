@@ -4,7 +4,7 @@
     {% if h.is_user_login() or h.is_excluded() %}
         {{ super() }}        
     {% else %}
-        {% snippet "snippets/close_for_guests_login_page.html", action='/login_generic?came_from=/user/logged_in' %}
+        {% snippet "snippets/close_for_guests_login_page.html" %}
     {% endif %} 
 {% endblock %}
 
