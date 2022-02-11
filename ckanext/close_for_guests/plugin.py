@@ -87,7 +87,7 @@ class CloseForGuestsPlugin(plugins.SingletonPlugin):
     def get_auth_functions(self):
         return {'package_show': does_have_organization,
                 'package_list': does_have_organization,
-                'resource_show': does_have_organization
+                'resource_show': does_have_organization,
             }
     
     
