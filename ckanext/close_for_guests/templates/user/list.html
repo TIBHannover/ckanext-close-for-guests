@@ -1,0 +1,31 @@
+{% ckan_extends %}
+
+{% block subtitle %}
+    {% if h.does_have_organization_helper() %}
+        {{ super() }}
+    {% endif %}
+{% endblock %}
+
+
+{% block secondary_content %}
+    {% if h.does_have_organization_helper() %}
+        {{ super() }}
+    {% endif %}
+{% endblock %}
+
+
+{% block users_list %}
+<ul class="user-list">
+    {% block users_list_inner %}
+        {% if h.does_have_organization_helper() %}
+        {{ super() }}
+    {% endif %}
+    {% endblock %}
+</ul>
+{% endblock %}
+
+{% block page_pagination %}
+    {% if h.does_have_organization_helper() %}
+        {{ super() }}
+    {% endif %}
+{% endblock %}
