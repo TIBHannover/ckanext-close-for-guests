@@ -88,6 +88,8 @@ class CloseForGuestsPlugin(plugins.SingletonPlugin):
         return {'package_show': does_have_organization,
                 'package_list': does_have_organization,
                 'resource_show': does_have_organization,
+                'group_create': does_have_organization,
+                'group_list': does_have_organization
             }
     
     

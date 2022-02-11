@@ -1,0 +1,38 @@
+{% ckan_extends %}
+
+{% block breadcrumb_content %}
+    {% if h.does_have_organization_helper() %}
+        {{ super() }}
+    {% endif %}
+{% endblock %}
+
+{% block content_action %}
+    {% if h.does_have_organization_helper() %}
+        {{ super() }}
+    {% endif %}
+{% endblock %}
+
+{% block content_primary_nav %}
+    {% if h.does_have_organization_helper() %}
+        {{ super() }}
+    {% endif %}
+{% endblock %}
+
+{% block links %}
+    {% if h.does_have_organization_helper() %}
+        {{ super() }}
+    {% endif %}
+{% endblock %}
+
+
+{% block primary_content_inner %}
+    {% if h.does_have_organization_helper() %}
+        {{ super() }}
+    {% endif %}
+{% endblock %}
+
+{% block secondary_content %}
+    {% if h.does_have_organization_helper() %}
+        {{ super() }}
+    {% endif %}
+{% endblock %}
