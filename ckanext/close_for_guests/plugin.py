@@ -42,12 +42,27 @@ def does_have_organization(context, data_dict=None):
     return {'success': False}
 
 
+def does_have_organization_helper():
+    '''
+        The helper function for checking a user organization status.    
+    '''
+
+    orgs = toolkit.get_action('organization_list')({}, {'all_fields':True, 'include_users': True})
+    for org in orgs:
+        for user in org['users']:
+            if toolkit.g.userobj.id == user['id']:
+                return True
+    
+    return False
+
+
 
 
 class CloseForGuestsPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.ITemplateHelpers)
     plugins.implements(plugins.IAuthFunctions)
+
     
     
     # IConfigurer
@@ -63,14 +78,16 @@ class CloseForGuestsPlugin(plugins.SingletonPlugin):
     def get_helpers(self):
         return {'is_user_login': is_user_login,
             'is_excluded': excluded_path,
-            'get_login_action': get_login_action
+            'get_login_action': get_login_action,
+            'does_have_organization_helper': does_have_organization_helper
         }
     
 
     # IAuthFunctions
     def get_auth_functions(self):
         return {'package_show': does_have_organization,
-                'package_list': does_have_organization
+                'package_list': does_have_organization,
+                'resource_show': does_have_organization
             }
     
     
