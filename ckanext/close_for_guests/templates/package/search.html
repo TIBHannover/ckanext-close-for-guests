@@ -1,8 +1,37 @@
 {% ckan_extends %}
 
+
+{% block form %}
+    {% if h.does_have_organization_helper() %}
+        {{ super() }}
+    {% endif %}
+{% endblock  %}
+
+
 {% block package_search_results_list %}
     {% if h.does_have_organization_helper() %}
         {{ super() }}
     {% endif %}
 
+{% endblock  %}
+
+
+{% block page_pagination %}
+      {% if h.does_have_organization_helper() %}
+        {{ super() }}
+    {% endif %}
+{% endblock %}
+
+
+{% block package_search_results_api %}
+    {% if h.does_have_organization_helper() %}
+        {{ super() }}
+    {% endif %}
+{% endblock  %}
+
+
+{% block secondary_content %}
+    {% if h.does_have_organization_helper() %}
+        {{ super() }}
+    {% endif %}
 {% endblock  %}
