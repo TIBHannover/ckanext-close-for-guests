@@ -27,11 +27,27 @@ def get_login_action():
         return "/login_generic?came_from=/user/logged_in"
 
 
+def does_have_organization(context, data_dict=None):
+    '''
+        Prevent when the user does not have any organization. 
+        Organizationless users should not be allowed to visit ckan entities.    
+    '''
+
+    orgs = toolkit.get_action('organization_list')({}, {'all_fields':True, 'include_users': True})
+    for org in orgs:
+        for user in org['users']:
+            if toolkit.g.userobj.id == user['id']:
+                return {'success': True}
+    
+    return {'success': False}
+
+
 
 
 class CloseForGuestsPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.ITemplateHelpers)
+    plugins.implements(plugins.IAuthFunctions)
     
     
     # IConfigurer
@@ -49,6 +65,13 @@ class CloseForGuestsPlugin(plugins.SingletonPlugin):
             'is_excluded': excluded_path,
             'get_login_action': get_login_action
         }
+    
+
+    # IAuthFunctions
+    def get_auth_functions(self):
+        return {'package_show': does_have_organization,
+                'package_list': does_have_organization
+            }
     
     
     
