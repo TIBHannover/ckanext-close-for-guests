@@ -1,0 +1,8 @@
+{% ckan_extends %}
+
+
+{% block organization_list %}
+    {% if h.does_have_organization_helper() %}
+        {{ super() }}
+    {% endif %}
+{% endblock %}
