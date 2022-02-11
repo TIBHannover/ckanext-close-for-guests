@@ -3,7 +3,7 @@
 {% block primary_content %}
     {% if h.does_have_organization_helper() %}
         {{ super() }}
-    {% endif %}
+    {% else: %}
       <div role="main" class="hero">
         <div class="container">
             <div class="row row1">
@@ -28,4 +28,5 @@
             </div>
         </div>
     </div>
+    {% endif %}
 {% endblock %}
