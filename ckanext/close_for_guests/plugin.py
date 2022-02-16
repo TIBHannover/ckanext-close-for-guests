@@ -1,3 +1,4 @@
+from attr import has
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 from flask import redirect, make_response
@@ -5,8 +6,10 @@ import ckan.lib.helpers as h
 
 
 def is_user_login():
-    if toolkit.g.user:
-        return True
+    if hasattr(toolkit.g, 'user'):
+        if toolkit.g.user:
+            return True
+        return False
     return False
 
 def excluded_path():
