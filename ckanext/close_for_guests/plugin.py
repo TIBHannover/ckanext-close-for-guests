@@ -38,8 +38,9 @@ def does_have_organization(context, data_dict=None):
     orgs = toolkit.get_action('organization_list')({}, {'all_fields':True, 'include_users': True})
     for org in orgs:
         for user in org['users']:
-            if toolkit.g.userobj.id == user['id']:
-                return {'success': True}
+            if is_user_login():
+                if toolkit.g.userobj.id == user['id']:
+                    return {'success': True}
     
     return {'success': False}
 
@@ -52,8 +53,10 @@ def does_have_organization_helper():
     orgs = toolkit.get_action('organization_list')({}, {'all_fields':True, 'include_users': True})
     for org in orgs:
         for user in org['users']:
-            if toolkit.g.userobj.id == user['id']:
-                return True
+            print(user)
+            if is_user_login():
+                if toolkit.g.userobj.id == user['id']:
+                    return True
     
     return False
 
