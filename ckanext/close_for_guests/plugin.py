@@ -66,7 +66,7 @@ def does_have_organization_helper():
 class CloseForGuestsPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.ITemplateHelpers)
-    plugins.implements(plugins.IAuthFunctions)
+   
 
     
     
@@ -88,14 +88,5 @@ class CloseForGuestsPlugin(plugins.SingletonPlugin):
         }
     
 
-    # IAuthFunctions
-    def get_auth_functions(self):
-        return {'package_show': does_have_organization,
-                'package_list': does_have_organization,
-                'resource_show': does_have_organization,
-                'group_create': does_have_organization,
-                'group_list': does_have_organization
-            }
-    
     
     
