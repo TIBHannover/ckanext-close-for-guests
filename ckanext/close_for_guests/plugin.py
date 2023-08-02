@@ -25,6 +25,8 @@ def get_login_action():
         return "/sfb1368/ckan/login_generic?came_from=/sfb1368/ckan/user/logged_in"
     elif ckan_root_path and 'sfb1153/ckan' in ckan_root_path:
         return "/sfb1153/ckan/login_generic?came_from=/sfb1153/ckan/user/logged_in"
+    elif ckan_root_path and 'trr298' in ckan_root_path:
+        return "/trr298-repository/login_generic?came_from=/sfb1153/ckan/user/logged_in"
     else:
         return "/login_generic?came_from=/user/logged_in"
 
