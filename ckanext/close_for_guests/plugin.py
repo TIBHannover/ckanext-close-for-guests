@@ -1,15 +1,20 @@
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
-from flask import redirect, make_response
 import ckan.lib.helpers as h
 
 
 def is_user_login():
-    if hasattr(toolkit.g, 'user'):
-        if toolkit.g.user:
+    try:
+        user = toolkit.g.user
+        if user:
             return True
         return False
-    return False
+    
+    except:
+        return False
+
+
+
 
 def excluded_path():
     path = toolkit.request.url
@@ -18,6 +23,9 @@ def excluded_path():
     if 'user/reset' in path:
         return True
     return False
+
+
+
 
 def get_login_action():
     ckan_root_path = toolkit.config.get('ckan.root_path')
@@ -29,6 +37,7 @@ def get_login_action():
         return "/trr298-repository/login_generic?came_from=/sfb1153/ckan/user/logged_in"
     else:
         return "/login_generic?came_from=/user/logged_in"
+
 
 
 def does_have_organization(context, data_dict=None):
@@ -45,6 +54,7 @@ def does_have_organization(context, data_dict=None):
                     return {'success': True}
     
     return {'success': False}
+
 
 
 def does_have_organization_helper():
@@ -67,8 +77,7 @@ def does_have_organization_helper():
 
 class CloseForGuestsPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
-    plugins.implements(plugins.ITemplateHelpers)
-   
+    plugins.implements(plugins.ITemplateHelpers)    
 
     
     
@@ -89,6 +98,7 @@ class CloseForGuestsPlugin(plugins.SingletonPlugin):
             'does_have_organization_helper': does_have_organization_helper
         }
     
+
 
     
     

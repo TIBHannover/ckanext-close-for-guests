@@ -1,8 +1,11 @@
 {% ckan_extends %}
 
 {% block page %}
-    {{ super() }}
+    {% if h.is_user_login() or h.is_excluded() %}
+        {{ super() }}        
+    {% else %}
+        {% snippet "snippets/close_for_guests_login_page.html" %}
+    {% endif %} 
 {% endblock %}
-
 
 
