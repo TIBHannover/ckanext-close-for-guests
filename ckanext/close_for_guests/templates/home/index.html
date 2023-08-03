@@ -4,11 +4,13 @@
     {% if h.does_have_organization_helper() %}
         {{ super() }}
     {% else: %}      
-    <div role="main">
+    <div role="main hero">
         <div class="container">
             <div class="row">
                 <div class="col-md-12">
-                    <h4><b>{{_('You are not part of any Organization. We will assign you to your organization. Please contact us if it does not happen. ')}}</b></h4>
+                    <h4><b>{{_('You are not part of any Organization yet
+                    . We will assign you to your organization. Please wait.
+                    Please contact us if you need your access immediately. ')}}</b></h4>
                 </div>           
             </div>
         </div>
