@@ -1,3 +1,6 @@
+[![CI](https://github.com/TIBHannover/ckanext-close-for-guests/actions/workflows/test.yml/badge.svg)](https://github.com/TIBHannover/ckanext-close-for-guests/actions/workflows/test.yml)
+
+
 # ckanext-close-for-guests
 
 The extension for closing CKAN to guest users and show login page.
