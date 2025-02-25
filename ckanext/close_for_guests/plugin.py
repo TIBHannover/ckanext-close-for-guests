@@ -40,7 +40,7 @@ def get_login_action():
         #if "/{{LANG}}" in ckan_root_path:
          #   ckan_root_path = ckan_root_path.split("/{{LANG}}")[0]
         #return f"{ckan_root_path}/login_generic?came_from={ckan_root_path}/user/logged_in"
-        return "/login_generic?came_from=/user/logged_in"
+        return "/trr375/login_generic?came_from=/trr375/user/logged_in"
     else:
         return "/login_generic?came_from=/user/logged_in"
 
