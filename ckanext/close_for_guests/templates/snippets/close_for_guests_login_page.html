@@ -1,26 +1,36 @@
+{#
+Renders the login form.
+
+action        - The url that the form should be submitted to.
+error_summary - A tuple/list of form errors.
+
+Example:
+
+  {% snippet "user/snippets/login_form.html", action=g.login_handler, error_summary=error_summary %}
+
+#}
 {% import 'macros/form.html' as form %}
-{% asset 'ckanext-close-for-guests/custom-login-form-css' %}
 
-<div class="row">
-    <div class="col-sm-12 site-logo-box-on-login">
-        <img src="{{ h.url_for_static_or_external(g.site_logo) }}" alt="{{ g.site_title }}" title="{{ g.site_title }}" />   
-        <h3>{{ g.site_title }}</h3> 
-    </div>
-</div>
+{% set username_error = true if error_summary %}
+{% set password_error = true if error_summary %}
 
-<div class="row">
-    <div class="col-sm-5 custom_logon_form_box">
-        <form action="{{ h.get_login_action() }}" method="post">
-            {{ h.csrf_input() if 'csrf_input' in h }}
-            {{ form.input('login', label=_("Username"), id='field-login', value="", error=username_error, classes=["control-medium"]) }}
-            {{ form.input('password', label=_("Password"), id='field-password', type="password", value="", error=password_error, classes=["control-medium"]) }}
-            {{ form.checkbox('remember', label=_("Remember me"), id='field-remember', checked=true, value="63072000") }}
-            <br>
-            <div class="form-actions">
-                <a class="btn btn-default pull-left" href="{{ h.url_for('user.register') }}">{{ _('Create an Account') }}</a>
-                <a class="btn btn-default" href="{{ h.url_for('user.request_reset') }}">{{ _('Forgot your password?') }}</a>
-                <button class="btn btn-primary" type="submit">{{ _('Login') }}</button>
-            </div>
-        </form>
-    </div>
-</div>
+<form action="{{ action }}" method="post">
+  {{ h.csrf_input() }}
+  {{ form.errors(errors=error_summary) }}
+
+  {{ form.input('login', label=_("Username or Email"), id='field-login', value="", error=username_error, classes=["control-medium"]) }}
+
+  {{ form.input('password', label=_("Password"), id='field-password', type="password", value="", error=password_error, classes=["control-medium"]) }}
+
+  {{ form.checkbox('remember', label=_("Remember me"), id='field-remember', checked=true, value="63072000") }}
+
+  {% if g.recaptcha_publickey %}
+    {% snippet "user/snippets/recaptcha.html", public_key=g.recaptcha_publickey %}
+  {% endif %}
+
+  <div class="form-actions">
+    {% block login_button %}
+    <button class="btn btn-primary" type="submit">{{ _('Login') }}</button>
+    {% endblock %}
+  </div>
+</form>
