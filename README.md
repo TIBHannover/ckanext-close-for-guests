@@ -26,7 +26,7 @@ To install ckanext-close-for-guests:
 
 2. Clone the source and install it on the virtualenv
 
-        git clone https://github.com//ckanext-close-for-guests.git
+        git clone https://github.com/TIBHannover/ckanext-close-for-guests.git
         cd ckanext-close-for-guests
         pip install -e .
         pip install -r requirements.txt
