@@ -14,7 +14,7 @@ Example:
 {% set username_error = true if error_summary %}
 {% set password_error = true if error_summary %}
 
-<form action="{{ g.login_handler }}" method="post">
+<form action="{{ h.get_login_action() }}" method="post">
   {{ h.csrf_input() }}
   {{ form.errors(errors=error_summary) }}
 
@@ -30,7 +30,7 @@ Example:
 
   <div class="form-actions">
     {% block login_button %}
-    <button class="btn btn-primary" type="submit">{{ _('Login') }}</button>
+      <button class="btn btn-primary" type="submit">{{ _('Login') }}</button>
     {% endblock %}
   </div>
 </form>
