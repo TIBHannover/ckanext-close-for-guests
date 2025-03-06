@@ -12,6 +12,15 @@ Example:
 {% import 'macros/form.html' as form %}
 {% asset 'ckanext-close-for-guests/custom-login-form-css' %}
 
+{% set flashed_errors = h.get_flashed_messages(category_filter=['error']) %}
+{% if flashed_errors %}
+  <div class="alert alert-danger">
+    {% for msg in flashed_errors %}
+      <p>{{ msg }}</p>
+    {% endfor %}
+  </div>
+{% endif %}
+
 {% set username_error = true if error_summary %}
 {% set password_error = true if error_summary %}
 
