@@ -16,7 +16,7 @@ Login form box (kept as-is, plus subtle styling from your palette) ——— */
 .site-logo-box-on-login{
   position: fixed;
   top: 16px;
-  right: 16px;
+  right: 8px;
   left: auto;                               /* override earlier left:10% */
   background: linear-gradient(135deg, #413473);
   padding: 8px 12px;
@@ -42,10 +42,12 @@ Login form box (kept as-is, plus subtle styling from your palette) ——— */
   display: block;
   margin: 6px 0 0 0;                        /* reset old margins */
   font-size: 18px;                          /* smaller to match chip */
+  margin-left: 4px;
 }
 
 /* ——— Responsive tweak ——— */
 @media (max-width: 480px){
   .site-logo-box-on-login > img{ width: 90px; }
   .site-logo-box-on-login{ top: 12px; right: 12px; padding: 6px 10px; }
+  .site-logo-box-on-login{ right: 6px; }
 }
