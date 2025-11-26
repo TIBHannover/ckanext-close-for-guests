@@ -40,10 +40,27 @@ Example:
             {{ form.checkbox('remember', label=_("Remember me"), id='field-remember', checked=true, value="63072000") }}
             <br>
             <div class="form-actions">
-                <a class="btn btn-default pull-left" href="{{ h.url_for('user.register') }}">{{ _('Create an Account') }}</a>
+                    <a class="btn btn-default pull-left"
+                       href="#"
+                       onclick="showInfoText(); return false;">
+                        {{ _('Request Access') }}
+                    </a>
                 <a class="btn btn-default" href="{{ h.url_for('user.request_reset') }}">{{ _('Forgot your password?') }}</a>
                 <button class="btn btn-primary" type="submit">{{ _('Login') }}</button>
+            </div>
+            <div id="inf-team-info" class="alert alert-info" style="display:none; margin-top:10px;">
+                {{ _('Please contact the INF Team to get an account for the data repository') }}
             </div>
         </form>
     </div>
 </div>
+
+
+<script type="text/javascript">
+  function showInfoText() {
+    var el = $('#inf-team-info');   // jQuery is available in CKAN templates
+    if (!el.is(':visible')) {
+      el.slideDown();
+    }
+  }
+</script>
