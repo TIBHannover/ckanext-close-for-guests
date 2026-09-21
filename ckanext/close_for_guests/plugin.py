@@ -1,32 +1,38 @@
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
-import ckan.lib.helpers as h
-from flask_login import current_user, login_user
+from flask_login import current_user
 
 
 def is_user_login():
     try:
-        return current_user.is_authenticated    
-    except:
+        return bool(current_user.is_authenticated)
+    except RuntimeError:
         return False
 
 
 
 
 def excluded_path():
-    path = toolkit.request.url
-    # if 'user/register' in path:
-    #     return True
-    if 'user/reset' in path:
-        return True
-    return False
+    return toolkit.request.path.startswith('/user/reset')
 
 
 
 
 def get_login_action():
-    came_from = toolkit.request.args.get('came_from') or toolkit.url_for('home.index')
+    came_from = toolkit.request.args.get('came_from')
+    if not came_from or not came_from.startswith('/') or came_from.startswith('//'):
+        came_from = toolkit.url_for('home.index')
     return toolkit.url_for('user.login', came_from=came_from)
+
+
+def _user_has_organization():
+    if not is_user_login():
+        return False
+
+    organizations = toolkit.get_action('organization_list_for_user')(
+        {'user': current_user.name}, {'id': current_user.id}
+    )
+    return bool(organizations)
 
 
 
@@ -36,15 +42,7 @@ def does_have_organization(context, data_dict=None):
         Organizationless users should not be allowed to visit ckan entities.    
     '''
 
-    if not current_user.is_authenticated:
-        return {'success': False}
-    orgs = toolkit.get_action('organization_list')({}, {'all_fields':True, 'include_users': True})    
-    for org in orgs:
-        for user in org['users']:
-            if is_user_login():
-                if current_user.id == user['id']:
-                    return {'success': True}    
-    return {'success': False}
+    return {'success': _user_has_organization()}
 
 
 
@@ -53,15 +51,7 @@ def does_have_organization_helper():
         The helper function for checking a user organization status.    
     '''
 
-    if not current_user.is_authenticated:
-        return False
-    orgs = toolkit.get_action('organization_list')({}, {'all_fields':True, 'include_users': True})
-    for org in orgs:
-        for user in org['users']:
-            if is_user_login():
-                if current_user.id == user['id']:
-                    return True    
-    return False
+    return _user_has_organization()
 
 
 
