@@ -12,6 +12,8 @@ The extension for closing CKAN to guest users and show login page.
 | --------------- | ------------- |
 | earlier | not tested    |
 | 2.9             | Yes   |
+| 2.10            | Yes   |
+| 2.11            | Yes   |
 
 
 
@@ -39,5 +41,4 @@ To install ckanext-close-for-guests:
 4. Restart CKAN. For example if you've deployed CKAN with Apache on Ubuntu:
 
         sudo service apache2 reload
-
 
