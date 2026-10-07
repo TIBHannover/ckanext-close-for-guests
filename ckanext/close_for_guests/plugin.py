@@ -25,6 +25,26 @@ def get_login_action():
     return toolkit.url_for('user.login', came_from=came_from)
 
 
+def close_for_guests_theme():
+    """Return the project theme used by the guest login page."""
+    project_id = str(
+        toolkit.config.get('ckanext.crc.project.id') or ''
+    ).strip()
+    if project_id in {'1153', '1368'}:
+        return 'sfb{}'.format(project_id)
+
+    configured_plugins = toolkit.config.get('ckan.plugins', [])
+    if isinstance(configured_plugins, str):
+        configured_plugins = configured_plugins.split()
+
+    if 'crc1153_layout' in configured_plugins:
+        return 'sfb1153'
+    if 'sfb_layout' in configured_plugins:
+        return 'sfb1368'
+
+    return 'default'
+
+
 def _user_has_organization():
     if not is_user_login():
         return False
@@ -76,6 +96,7 @@ class CloseForGuestsPlugin(plugins.SingletonPlugin):
         return {'is_user_login': is_user_login,
             'is_excluded': excluded_path,
             'get_login_action': get_login_action,
+            'close_for_guests_theme': close_for_guests_theme,
             'does_have_organization_helper': does_have_organization_helper
         }
     

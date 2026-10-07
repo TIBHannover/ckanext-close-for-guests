@@ -62,6 +62,23 @@ def test_guest_home_renders_login_form(app):
 
     assert response.status_code == 200
     assert 'id="field-login"' in response.body
+    assert 'close-for-guests-page--default' in response.body
+
+
+@pytest.mark.parametrize(
+    ("config", "expected"),
+    [
+        ({"ckanext.crc.project.id": "1153"}, "sfb1153"),
+        ({"ckanext.crc.project.id": "1368"}, "sfb1368"),
+        ({"ckan.plugins": "close_for_guests crc1153_layout"}, "sfb1153"),
+        ({"ckan.plugins": ["close_for_guests", "sfb_layout"]}, "sfb1368"),
+        ({}, "default"),
+    ],
+)
+def test_close_for_guests_theme(monkeypatch, config, expected):
+    monkeypatch.setattr(toolkit, "config", config)
+
+    assert plugin.close_for_guests_theme() == expected
 
 
 def test_excluded_path_uses_request_path(app):
