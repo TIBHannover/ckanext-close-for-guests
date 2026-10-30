@@ -162,6 +162,10 @@ class CloseForGuestsPlugin(plugins.SingletonPlugin):
         # contain the normal session or API-token identity at this point.
         app.before_request(enforce_login_for_all)
         return app
+
+    def make_error_log_middleware(self, app, config):
+        """Keep CKAN's error-log middleware stack unchanged."""
+        return app
         
 
     #ITemplateHelpers

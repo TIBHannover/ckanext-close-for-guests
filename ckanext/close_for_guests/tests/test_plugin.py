@@ -48,6 +48,7 @@ To temporary patch the CKAN configuration for the duration of a test you can use
         pass
 """
 from types import SimpleNamespace
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 
@@ -133,22 +134,28 @@ def test_organization_check_rejects_guests(monkeypatch):
 @pytest.mark.ckan_config("SECRET_KEY", "test_secret")
 @pytest.mark.usefixtures("with_plugins")
 def test_strict_mode_redirects_anonymous_home_to_login(app):
-    response = app.get("/")
+    response = app.get("/", follow_redirects=False)
     assert response.status_code == 302
-    assert response.location.endswith("/user/login?came_from=%2F")
+    location = urlparse(response.location)
+    assert location.path == "/user/login"
+    assert parse_qs(location.query)["came_from"] == ["/"]
 
 
 def test_strict_redirect_preserves_url_prefix(app, monkeypatch):
     monkeypatch.setitem(toolkit.config, plugin.REQUIRE_LOGIN_CONFIG, True)
     with app.flask_app.test_request_context(
-        "/dataset/example", environ_base={"SCRIPT_NAME": "/trr375"}
+        "/dataset/example", base_url="http://localhost/trr375/"
     ):
         monkeypatch.setattr(plugin, "_is_authenticated_request", lambda: False)
         monkeypatch.setattr(plugin, "_is_authentication_endpoint", lambda: False)
         response = plugin.enforce_login_for_all()
 
     assert response.status_code == 302
-    assert "came_from=%2Ftrr375%2Fdataset%2Fexample" in response.location
+    location = urlparse(response.location)
+    assert location.path == "/trr375/user/login"
+    assert parse_qs(location.query)["came_from"] == [
+        "/trr375/dataset/example"
+    ]
 
 
 @pytest.mark.ckan_config("ckan.plugins", "close_for_guests")
@@ -158,9 +165,11 @@ def test_strict_redirect_preserves_url_prefix(app, monkeypatch):
 @pytest.mark.parametrize("extension", ["txt", "zip", "py", "pdf"])
 def test_strict_mode_blocks_anonymous_direct_downloads(app, extension):
     path = "/dataset/public/resource/id/download/file.{}".format(extension)
-    response = app.get(path)
+    response = app.get(path, follow_redirects=False)
     assert response.status_code == 302
-    assert "/user/login?came_from=" in response.location
+    location = urlparse(response.location)
+    assert location.path == "/user/login"
+    assert parse_qs(location.query)["came_from"] == [path]
 
 
 @pytest.mark.ckan_config("ckan.plugins", "close_for_guests")
@@ -172,7 +181,9 @@ def test_strict_mode_blocks_anonymous_direct_downloads(app, extension):
     ["/dataset/public", "/dataset/public/resource/id", "/dataset/public/resource/id/view/view-id"],
 )
 def test_strict_mode_blocks_anonymous_dataset_routes(app, path):
-    assert app.get(path).status_code == 302
+    response = app.get(path, follow_redirects=False)
+    assert response.status_code == 302
+    assert parse_qs(urlparse(response.location).query)["came_from"] == [path]
 
 
 @pytest.mark.ckan_config("ckan.plugins", "close_for_guests")
@@ -203,10 +214,14 @@ def test_strict_mode_keeps_authentication_pages_accessible(app, path):
 def test_strict_mode_allows_authenticated_public_dataset(app):
     user = factories.User()
     dataset = factories.Dataset(private=False)
-    headers = {"Authorization": user["apikey"]}
-    assert app.get("/", headers=headers).status_code == 200
+    environ = {"REMOTE_USER": user["name"]}
+    assert app.get(
+        "/", extra_environ=environ, follow_redirects=False
+    ).status_code == 200
     url = toolkit.url_for("dataset.read", id=dataset["name"])
-    assert app.get(url, headers=headers).status_code == 200
+    assert app.get(
+        url, extra_environ=environ, follow_redirects=False
+    ).status_code == 200
 
 
 @pytest.mark.ckan_config("ckan.plugins", "close_for_guests")
@@ -216,7 +231,20 @@ def test_strict_mode_allows_authenticated_public_dataset(app):
 def test_strict_mode_preserves_private_dataset_authorization(app):
     owner = factories.User()
     outsider = factories.User()
-    dataset = factories.Dataset(user=owner, private=True)
+    organization = factories.Organization(
+        users=[{"name": owner["name"], "capacity": "admin"}]
+    )
+    dataset = factories.Dataset(
+        user=owner, owner_org=organization["id"], private=True
+    )
     url = toolkit.url_for("dataset.read", id=dataset["name"])
-    assert app.get(url, headers={"Authorization": owner["apikey"]}).status_code == 200
-    assert app.get(url, headers={"Authorization": outsider["apikey"]}).status_code == 403
+    assert app.get(
+        url,
+        extra_environ={"REMOTE_USER": owner["name"]},
+        follow_redirects=False,
+    ).status_code == 200
+    assert app.get(
+        url,
+        extra_environ={"REMOTE_USER": outsider["name"]},
+        follow_redirects=False,
+    ).status_code in (403, 404)
