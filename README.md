@@ -42,3 +42,25 @@ To install ckanext-close-for-guests:
 
         sudo service apache2 reload
 
+## Strict authentication mode
+
+The historical template-only behavior remains the default. To require a
+valid CKAN session or API token for every CKAN page, API action, preview, and
+resource download, add this setting:
+
+    ckanext.close_for_guests.require_login_for_all = true
+
+In Docker environments using `ckanext-envvars`, the equivalent variable is:
+
+    CKANEXT__CLOSE_FOR_GUESTS__REQUIRE_LOGIN_FOR_ALL=true
+
+Browser requests are redirected to CKAN's login page with a local
+`came_from` URL. Anonymous `/api` requests receive HTTP 401. Login, logout,
+password-reset routes, and CKAN static assets remain public. Once a user is
+authenticated, CKAN's standard authorization continues to decide whether
+public and private datasets and their resources may be read.
+
+Resource storage must not be mounted into a separately public Nginx/Apache
+location. Downloads should continue to pass through CKAN's resource download
+route so that both this login gate and CKAN's dataset authorization run.
+
