@@ -52,6 +52,7 @@ from types import SimpleNamespace
 import pytest
 
 from ckan.plugins import toolkit
+from ckan.tests import factories
 import ckanext.close_for_guests.plugin as plugin
 
 @pytest.mark.ckan_config("ckan.plugins", "close_for_guests")
@@ -125,3 +126,97 @@ def test_organization_check_rejects_guests(monkeypatch):
 
     assert plugin.does_have_organization_helper() is False
     assert plugin.does_have_organization({}, {}) == {"success": False}
+
+
+@pytest.mark.ckan_config("ckan.plugins", "close_for_guests")
+@pytest.mark.ckan_config(plugin.REQUIRE_LOGIN_CONFIG, True)
+@pytest.mark.ckan_config("SECRET_KEY", "test_secret")
+@pytest.mark.usefixtures("with_plugins")
+def test_strict_mode_redirects_anonymous_home_to_login(app):
+    response = app.get("/")
+    assert response.status_code == 302
+    assert response.location.endswith("/user/login?came_from=%2F")
+
+
+def test_strict_redirect_preserves_url_prefix(app, monkeypatch):
+    monkeypatch.setitem(toolkit.config, plugin.REQUIRE_LOGIN_CONFIG, True)
+    with app.flask_app.test_request_context(
+        "/dataset/example", environ_base={"SCRIPT_NAME": "/trr375"}
+    ):
+        monkeypatch.setattr(plugin, "_is_authenticated_request", lambda: False)
+        monkeypatch.setattr(plugin, "_is_authentication_endpoint", lambda: False)
+        response = plugin.enforce_login_for_all()
+
+    assert response.status_code == 302
+    assert "came_from=%2Ftrr375%2Fdataset%2Fexample" in response.location
+
+
+@pytest.mark.ckan_config("ckan.plugins", "close_for_guests")
+@pytest.mark.ckan_config(plugin.REQUIRE_LOGIN_CONFIG, True)
+@pytest.mark.ckan_config("SECRET_KEY", "test_secret")
+@pytest.mark.usefixtures("with_plugins")
+@pytest.mark.parametrize("extension", ["txt", "zip", "py", "pdf"])
+def test_strict_mode_blocks_anonymous_direct_downloads(app, extension):
+    path = "/dataset/public/resource/id/download/file.{}".format(extension)
+    response = app.get(path)
+    assert response.status_code == 302
+    assert "/user/login?came_from=" in response.location
+
+
+@pytest.mark.ckan_config("ckan.plugins", "close_for_guests")
+@pytest.mark.ckan_config(plugin.REQUIRE_LOGIN_CONFIG, True)
+@pytest.mark.ckan_config("SECRET_KEY", "test_secret")
+@pytest.mark.usefixtures("with_plugins")
+@pytest.mark.parametrize(
+    "path",
+    ["/dataset/public", "/dataset/public/resource/id", "/dataset/public/resource/id/view/view-id"],
+)
+def test_strict_mode_blocks_anonymous_dataset_routes(app, path):
+    assert app.get(path).status_code == 302
+
+
+@pytest.mark.ckan_config("ckan.plugins", "close_for_guests")
+@pytest.mark.ckan_config(plugin.REQUIRE_LOGIN_CONFIG, True)
+@pytest.mark.ckan_config("SECRET_KEY", "test_secret")
+@pytest.mark.usefixtures("with_plugins")
+def test_strict_mode_returns_401_for_anonymous_api(app):
+    response = app.get("/api/3/action/package_show?id=public")
+    assert response.status_code == 401
+    assert response.json["success"] is False
+    assert response.json["error"]["message"] == "Authentication required"
+    assert response.headers["WWW-Authenticate"] == "Bearer"
+
+
+@pytest.mark.ckan_config("ckan.plugins", "close_for_guests")
+@pytest.mark.ckan_config(plugin.REQUIRE_LOGIN_CONFIG, True)
+@pytest.mark.ckan_config("SECRET_KEY", "test_secret")
+@pytest.mark.usefixtures("with_plugins")
+@pytest.mark.parametrize("path", ["/user/login", "/user/reset", "/user/logged_out_redirect"])
+def test_strict_mode_keeps_authentication_pages_accessible(app, path):
+    assert app.get(path).status_code == 200
+
+
+@pytest.mark.ckan_config("ckan.plugins", "close_for_guests")
+@pytest.mark.ckan_config(plugin.REQUIRE_LOGIN_CONFIG, True)
+@pytest.mark.ckan_config("SECRET_KEY", "test_secret")
+@pytest.mark.usefixtures("with_plugins", "clean_db")
+def test_strict_mode_allows_authenticated_public_dataset(app):
+    user = factories.User()
+    dataset = factories.Dataset(private=False)
+    headers = {"Authorization": user["apikey"]}
+    assert app.get("/", headers=headers).status_code == 200
+    url = toolkit.url_for("dataset.read", id=dataset["name"])
+    assert app.get(url, headers=headers).status_code == 200
+
+
+@pytest.mark.ckan_config("ckan.plugins", "close_for_guests")
+@pytest.mark.ckan_config(plugin.REQUIRE_LOGIN_CONFIG, True)
+@pytest.mark.ckan_config("SECRET_KEY", "test_secret")
+@pytest.mark.usefixtures("with_plugins", "clean_db")
+def test_strict_mode_preserves_private_dataset_authorization(app):
+    owner = factories.User()
+    outsider = factories.User()
+    dataset = factories.Dataset(user=owner, private=True)
+    url = toolkit.url_for("dataset.read", id=dataset["name"])
+    assert app.get(url, headers={"Authorization": owner["apikey"]}).status_code == 200
+    assert app.get(url, headers={"Authorization": outsider["apikey"]}).status_code == 403
