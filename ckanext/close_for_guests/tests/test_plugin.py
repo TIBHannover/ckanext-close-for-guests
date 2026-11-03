@@ -83,14 +83,32 @@ def test_close_for_guests_theme(monkeypatch, config, expected):
     assert plugin.close_for_guests_theme() == expected
 
 
+@pytest.mark.parametrize(
+    ("configured", "expected"),
+    [
+        (None, "request_access"),
+        ("request_access", "request_access"),
+        ("default", "default"),
+        ("unexpected", "request_access"),
+    ],
+)
+def test_registration_mode_is_explicit_and_backwards_compatible(
+    monkeypatch, configured, expected
+):
+    config = {}
+    if configured is not None:
+        config[plugin.REGISTRATION_MODE_CONFIG] = configured
+    monkeypatch.setattr(toolkit, "config", config)
+
+    assert plugin.registration_mode() == expected
+
+
 def test_excluded_path_uses_request_path(app):
     with app.flask_app.test_request_context("/?next=/user/reset"):
         assert plugin.excluded_path() is False
 
     with app.flask_app.test_request_context("/user/reset"):
         assert plugin.excluded_path() is True
-
-
 def test_organization_check_uses_current_user_action(monkeypatch):
     user = SimpleNamespace(
         id="user-id", name="user-name", is_authenticated=True
@@ -205,6 +223,155 @@ def test_strict_mode_returns_401_for_anonymous_api(app):
 @pytest.mark.parametrize("path", ["/user/login", "/user/reset", "/user/logged_out_redirect"])
 def test_strict_mode_keeps_authentication_pages_accessible(app, path):
     assert app.get(path).status_code == 200
+
+
+@pytest.mark.ckan_config("ckan.plugins", "close_for_guests")
+@pytest.mark.ckan_config(plugin.REQUIRE_LOGIN_CONFIG, True)
+@pytest.mark.ckan_config(plugin.REGISTRATION_MODE_CONFIG, "default")
+@pytest.mark.ckan_config("ckan.auth.create_user_via_web", True)
+@pytest.mark.ckan_config("SECRET_KEY", "test_secret")
+@pytest.mark.usefixtures("with_plugins")
+def test_strict_mode_allows_explicitly_enabled_self_registration(app):
+    response = app.get("/user/register", follow_redirects=False)
+
+    assert response.status_code == 200
+    assert 'id="user-register-form"' in response.body
+
+
+@pytest.mark.ckan_config("ckan.plugins", "close_for_guests")
+@pytest.mark.ckan_config(plugin.REQUIRE_LOGIN_CONFIG, True)
+@pytest.mark.ckan_config(plugin.REGISTRATION_MODE_CONFIG, "default")
+@pytest.mark.ckan_config("ckan.auth.create_user_via_web", False)
+@pytest.mark.ckan_config("SECRET_KEY", "test_secret")
+@pytest.mark.usefixtures("with_plugins")
+def test_strict_mode_leaves_disabled_self_registration_forbidden(app):
+    response = app.get("/user/register", follow_redirects=False)
+
+    assert response.status_code == 403
+    assert response.location is None
+
+
+@pytest.mark.ckan_config("ckan.plugins", "close_for_guests")
+@pytest.mark.ckan_config(plugin.REQUIRE_LOGIN_CONFIG, True)
+@pytest.mark.ckan_config(plugin.REGISTRATION_MODE_CONFIG, "request_access")
+@pytest.mark.ckan_config("ckan.auth.create_user_via_web", True)
+@pytest.mark.ckan_config("SECRET_KEY", "test_secret")
+@pytest.mark.usefixtures("with_plugins", "clean_db")
+def test_strict_mode_allows_sysadmin_user_creation_form(app):
+    sysadmin = factories.Sysadmin()
+    response = app.get(
+        "/user/register",
+        extra_environ={"REMOTE_USER": sysadmin["name"]},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 200
+    assert 'id="user-register-form"' in response.body
+
+
+@pytest.mark.ckan_config("ckan.plugins", "close_for_guests")
+@pytest.mark.ckan_config(plugin.REQUIRE_LOGIN_CONFIG, True)
+@pytest.mark.ckan_config(plugin.REGISTRATION_MODE_CONFIG, "request_access")
+@pytest.mark.ckan_config("ckan.auth.create_user_via_web", True)
+@pytest.mark.ckan_config("SECRET_KEY", "test_secret")
+@pytest.mark.usefixtures("with_plugins")
+def test_request_access_mode_hides_public_registration_even_if_ckan_allows_it(app):
+    login = app.get("/user/login")
+
+    assert "Request Access" in login.body
+    assert 'href="#"' in login.body
+    assert "showInfoText(); return false" in login.body
+    assert "Create an Account" not in login.body
+    assert 'href="/user/register"' not in login.body
+    assert (
+        login.body.index("Request Access")
+        < login.body.index("Forgot your password?")
+        < login.body.rindex("Login")
+    )
+
+    response = app.get("/user/register", follow_redirects=False)
+    assert response.status_code == 302
+    assert urlparse(response.location).path == "/user/login"
+
+
+@pytest.mark.ckan_config("ckan.plugins", "close_for_guests")
+@pytest.mark.ckan_config(plugin.REGISTRATION_MODE_CONFIG, "default")
+@pytest.mark.ckan_config("ckan.auth.create_user_via_web", True)
+@pytest.mark.ckan_config("SECRET_KEY", "test_secret")
+@pytest.mark.usefixtures("with_plugins")
+@pytest.mark.parametrize("project_id", ["1153", "1368"])
+def test_crc_default_mode_uses_standard_ckan_registration_ui(
+    app, monkeypatch, project_id
+):
+    monkeypatch.setitem(toolkit.config, "ckanext.crc.project.id", project_id)
+    login = app.get("/user/login")
+
+    assert "Create an Account" in login.body
+    assert 'href="/user/register"' in login.body
+    assert "Request Access" not in login.body
+    assert app.get("/user/register").status_code == 200
+
+
+@pytest.mark.ckan_config("ckan.plugins", "close_for_guests")
+@pytest.mark.ckan_config(plugin.REQUIRE_LOGIN_CONFIG, True)
+@pytest.mark.ckan_config(plugin.REGISTRATION_MODE_CONFIG, "default")
+@pytest.mark.ckan_config("ckan.auth.create_user_via_web", True)
+@pytest.mark.ckan_config("SECRET_KEY", "test_secret")
+@pytest.mark.usefixtures("with_plugins", "clean_db")
+def test_default_mode_can_create_user_when_ckan_allows_self_registration(app):
+    response = app.post(
+        "/user/register",
+        data={
+            "save": "",
+            "name": "self-registered-user",
+            "fullname": "Self Registered User",
+            "email": "self-register@example.test",
+            "password1": "TestPassword123",
+            "password2": "TestPassword123",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code in (200, 302)
+    created = toolkit.get_action("user_show")(
+        {"ignore_auth": True}, {"id": "self-registered-user"}
+    )
+    assert created["name"] == "self-registered-user"
+
+
+@pytest.mark.ckan_config("ckan.plugins", "close_for_guests")
+@pytest.mark.ckan_config(plugin.REQUIRE_LOGIN_CONFIG, True)
+@pytest.mark.ckan_config(plugin.REGISTRATION_MODE_CONFIG, "request_access")
+@pytest.mark.ckan_config("ckan.auth.create_user_via_web", True)
+@pytest.mark.ckan_config("SECRET_KEY", "test_secret")
+@pytest.mark.usefixtures("with_plugins", "clean_db")
+def test_request_access_mode_sysadmin_can_create_managed_user(app):
+    sysadmin = factories.Sysadmin()
+    token = factories.APIToken(user=sysadmin["id"])["token"]
+    headers = {"Authorization": token}
+    form = app.get("/user/register", headers=headers)
+    assert form.status_code == 200
+
+    response = app.post(
+        "/user/register",
+        data={
+            "save": "",
+            "name": "admin-created-user",
+            "fullname": "Admin Created User",
+            "email": "admin-created@example.test",
+            "password1": "TestPassword123",
+            "password2": "TestPassword123",
+        },
+        headers=headers,
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 302
+    assert "/user/admin-created-user" in response.location
+    created = toolkit.get_action("user_show")(
+        {"ignore_auth": True}, {"id": "admin-created-user"}
+    )
+    assert created["name"] == "admin-created-user"
 
 
 @pytest.mark.ckan_config("ckan.plugins", "close_for_guests")

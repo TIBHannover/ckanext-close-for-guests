@@ -6,6 +6,9 @@ from flask_login import current_user
 
 
 REQUIRE_LOGIN_CONFIG = 'ckanext.close_for_guests.require_login_for_all'
+REGISTRATION_MODE_CONFIG = 'ckanext.close_for_guests.registration_mode'
+REGISTRATION_MODE_REQUEST_ACCESS = 'request_access'
+REGISTRATION_MODE_DEFAULT = 'default'
 AUTH_ENDPOINTS = frozenset({
     'user.login', 'user.logged_in', 'user.logout', 'user.logged_out',
     'user.logged_out_page', 'user.request_reset', 'user.perform_reset',
@@ -22,7 +25,34 @@ def is_user_login():
 
 
 def excluded_path():
-    return toolkit.request.path.startswith('/user/reset')
+    # These pages must render CKAN's own content for anonymous users.  The
+    # registration view performs its user_create authorization check before
+    # rendering, so this does not enable registration by itself.
+    return (
+        toolkit.request.path.startswith('/user/reset')
+        or (
+            toolkit.request.endpoint == 'user.register'
+            and registration_mode() == REGISTRATION_MODE_DEFAULT
+        )
+    )
+
+
+def registration_mode():
+    """Return the configured login/registration workflow.
+
+    The historical request-access screen remains the fallback for deployments
+    that have not selected a mode yet.
+    """
+    configured = str(toolkit.config.get(
+        REGISTRATION_MODE_CONFIG, REGISTRATION_MODE_REQUEST_ACCESS
+    )).strip().lower()
+    if configured == REGISTRATION_MODE_DEFAULT:
+        return REGISTRATION_MODE_DEFAULT
+    return REGISTRATION_MODE_REQUEST_ACCESS
+
+
+def uses_request_access():
+    return registration_mode() == REGISTRATION_MODE_REQUEST_ACCESS
 
 
 
@@ -48,6 +78,8 @@ def _is_authentication_endpoint():
     endpoint = toolkit.request.endpoint
     if endpoint in AUTH_ENDPOINTS or endpoint == 'static':
         return True
+    if endpoint == 'user.register':
+        return registration_mode() == REGISTRATION_MODE_DEFAULT
 
     # repoze.who consumes these routes outside Flask in production. Custom
     # handler paths must also remain reachable to establish/clear a session.
@@ -65,6 +97,16 @@ def _is_authentication_endpoint():
 
 def enforce_login_for_all():
     """Block every anonymous CKAN route except authentication and assets."""
+    # Request-access deployments must never expose CKAN self-registration,
+    # even if create_user_via_web was enabled accidentally.  Authenticated
+    # sysadmins still use the same CKAN route to create managed accounts.
+    if (
+        toolkit.request.endpoint == 'user.register'
+        and uses_request_access()
+        and not _is_authenticated_request()
+    ):
+        return redirect(toolkit.url_for('user.login'), code=302)
+
     if not require_login_for_all():
         return None
     if _is_authenticated_request() or _is_authentication_endpoint():
@@ -175,6 +217,8 @@ class CloseForGuestsPlugin(plugins.SingletonPlugin):
             'is_excluded': excluded_path,
             'get_login_action': get_login_action,
             'require_login_for_all': require_login_for_all,
+            'close_for_guests_registration_mode': registration_mode,
+            'close_for_guests_uses_request_access': uses_request_access,
             'close_for_guests_theme': close_for_guests_theme,
             'does_have_organization_helper': does_have_organization_helper
         }

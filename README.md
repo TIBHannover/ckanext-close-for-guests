@@ -64,3 +64,21 @@ Resource storage must not be mounted into a separately public Nginx/Apache
 location. Downloads should continue to pass through CKAN's resource download
 route so that both this login gate and CKAN's dataset authorization run.
 
+## Login and registration workflow
+
+The historical request-access login page remains the default for backward
+compatibility. Configure the workflow explicitly for each deployment:
+
+    # TRR375: contact-based access requests, no anonymous self-registration
+    ckanext.close_for_guests.registration_mode = request_access
+    ckanext.close_for_guests.require_login_for_all = true
+
+    # SFB1153/SFB1368: CKAN's standard registration and user-creation UI
+    ckanext.close_for_guests.registration_mode = default
+
+`default` does not enable registration. CKAN's existing
+`ckan.auth.create_user_via_web` permission remains authoritative. In Docker
+environments the setting is available as:
+
+    CKANEXT__CLOSE_FOR_GUESTS__REGISTRATION_MODE=default
+
