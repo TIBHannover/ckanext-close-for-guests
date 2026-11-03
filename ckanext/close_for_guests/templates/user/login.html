@@ -2,7 +2,7 @@
 {% import 'macros/form.html' as form %}
 
 {% block page %}
-    {% if h.is_user_login() %}
+    {% if not h.close_for_guests_uses_request_access() or h.is_user_login() %}
         {{ super() }}
     {% else %}
         {% snippet "snippets/close_for_guests_login_page.html" %}        
