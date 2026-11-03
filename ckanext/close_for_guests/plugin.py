@@ -33,6 +33,10 @@ def excluded_path():
     return (
         toolkit.request.path.startswith('/user/reset')
         or (
+            toolkit.request.endpoint == 'user.login'
+            and uses_legacy_sfb_login()
+        )
+        or (
             toolkit.request.endpoint == 'user.register'
             and registration_mode() in {
                 REGISTRATION_MODE_DEFAULT, REGISTRATION_MODE_LEGACY_SFB,

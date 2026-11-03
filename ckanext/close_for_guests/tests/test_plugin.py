@@ -377,9 +377,11 @@ def test_legacy_sfb_mode_restores_v114_login_and_registration(
     assert "Username or Email" in login.body
     assert 'id="field-password"' in login.body
     assert 'id="field-remember"' in login.body
-    assert 'class="col-sm-5 custom_logon_form_box"' in login.body
-    assert 'class="col-sm-12 site-logo-box-on-login"' in login.body
-    assert "legacy_sfb_login.css" in login.body
+    assert 'id="content" class="container"' in login.body
+    assert '<section class="module">' in login.body
+    assert '<div class="module-content">' in login.body
+    assert 'class="custom_logon_form_box"' not in login.body
+    assert "legacy_sfb_login.css" not in login.body
     assert '<form action="' in login.body
     assert '<form action=""' not in login.body
     assert "Request Access" not in login.body

@@ -2,9 +2,23 @@
 {% import 'macros/form.html' as form %}
 
 {% block page %}
-    {% if not h.close_for_guests_uses_custom_login() or h.is_user_login() %}
+    {% if h.close_for_guests_uses_legacy_sfb_login() or not h.close_for_guests_uses_custom_login() or h.is_user_login() %}
         {{ super() }}
     {% else %}
         {% snippet "snippets/close_for_guests_login_page.html" %}        
+    {% endif %}
+{% endblock %}
+
+{% block form %}
+    {% if h.close_for_guests_uses_legacy_sfb_login() %}
+        {% snippet "snippets/legacy_sfb_login_page.html" %}
+    {% else %}
+        {{ super() }}
+    {% endif %}
+{% endblock %}
+
+{% block secondary_content %}
+    {% if not h.close_for_guests_uses_legacy_sfb_login() %}
+        {{ super() }}
     {% endif %}
 {% endblock %}
