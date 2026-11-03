@@ -176,6 +176,38 @@ def test_strict_redirect_preserves_url_prefix(app, monkeypatch):
     ]
 
 
+def test_missing_legacy_handler_settings_are_not_read_with_config_get(
+    app, monkeypatch
+):
+    legacy_keys = {
+        "ckan.login_handler_path",
+        "ckan.logout_handler_path",
+        "ckan.post_login_url",
+        "ckan.post_logout_url",
+    }
+
+    class ConfigWithoutLegacySettings(dict):
+        def get(self, key, default=None):
+            assert key not in legacy_keys
+            return super().get(key, default)
+
+    monkeypatch.setattr(
+        toolkit, "config", ConfigWithoutLegacySettings()
+    )
+    with app.flask_app.test_request_context("/dataset/example"):
+        assert plugin._is_authentication_endpoint() is False
+
+
+def test_configured_legacy_login_handler_remains_accessible(app, monkeypatch):
+    monkeypatch.setattr(
+        toolkit,
+        "config",
+        {"ckan.login_handler_path": "/custom-login?came_from=/"},
+    )
+    with app.flask_app.test_request_context("/custom-login"):
+        assert plugin._is_authentication_endpoint() is True
+
+
 @pytest.mark.ckan_config("ckan.plugins", "close_for_guests")
 @pytest.mark.ckan_config(plugin.REQUIRE_LOGIN_CONFIG, True)
 @pytest.mark.ckan_config("SECRET_KEY", "test_secret")
@@ -223,6 +255,20 @@ def test_strict_mode_returns_401_for_anonymous_api(app):
 @pytest.mark.parametrize("path", ["/user/login", "/user/reset", "/user/logged_out_redirect"])
 def test_strict_mode_keeps_authentication_pages_accessible(app, path):
     assert app.get(path).status_code == 200
+
+
+@pytest.mark.ckan_config("ckan.plugins", "close_for_guests")
+@pytest.mark.ckan_config(plugin.REQUIRE_LOGIN_CONFIG, True)
+@pytest.mark.ckan_config("SECRET_KEY", "test_secret")
+@pytest.mark.usefixtures("with_plugins")
+def test_strict_mode_does_not_redirect_ckan_webassets(app):
+    response = app.get(
+        "/webassets/asset-that-does-not-exist.css",
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 404
+    assert response.location is None
 
 
 @pytest.mark.ckan_config("ckan.plugins", "close_for_guests")

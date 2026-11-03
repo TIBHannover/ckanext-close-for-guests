@@ -12,6 +12,7 @@ REGISTRATION_MODE_DEFAULT = 'default'
 AUTH_ENDPOINTS = frozenset({
     'user.login', 'user.logged_in', 'user.logout', 'user.logged_out',
     'user.logged_out_page', 'user.request_reset', 'user.perform_reset',
+    'webassets.index',
 })
 
 
@@ -84,14 +85,21 @@ def _is_authentication_endpoint():
     # repoze.who consumes these routes outside Flask in production. Custom
     # handler paths must also remain reachable to establish/clear a session.
     path = toolkit.request.path.rstrip('/') or '/'
-    configured_paths = {
-        str(toolkit.config.get(key, '')).split('?', 1)[0].rstrip('/')
-        for key in (
-            'ckan.login_handler_path', 'ckan.logout_handler_path',
-            'ckan.post_login_url', 'ckan.post_logout_url',
-        )
-        if toolkit.config.get(key)
-    }
+    configured_paths = set()
+    for key in (
+        'ckan.login_handler_path', 'ckan.logout_handler_path',
+        'ckan.post_login_url', 'ckan.post_logout_url',
+    ):
+        # CKAN 2.11 warns when config.get() reads an undeclared option. These
+        # legacy repoze.who settings are optional, so inspect only keys that
+        # are actually present in the deployment configuration.
+        if key not in toolkit.config:
+            continue
+        value = toolkit.config[key]
+        if value:
+            configured_paths.add(
+                str(value).split('?', 1)[0].rstrip('/')
+            )
     return path in configured_paths
 
 
