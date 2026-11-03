@@ -76,6 +76,11 @@ compatibility. Configure the workflow explicitly for each deployment:
     # SFB1153/SFB1368: CKAN's standard registration and user-creation UI
     ckanext.close_for_guests.registration_mode = default
 
+To restore the compact custom SFB login form from version 1.1.4 while keeping
+CKAN 2.11 registration, password-reset, CSRF, and route handling, use:
+
+    ckanext.close_for_guests.registration_mode = legacy_sfb
+
 `default` does not enable registration. CKAN's existing
 `ckan.auth.create_user_via_web` permission remains authoritative. In Docker
 environments the setting is available as:

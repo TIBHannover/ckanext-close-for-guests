@@ -9,6 +9,7 @@ REQUIRE_LOGIN_CONFIG = 'ckanext.close_for_guests.require_login_for_all'
 REGISTRATION_MODE_CONFIG = 'ckanext.close_for_guests.registration_mode'
 REGISTRATION_MODE_REQUEST_ACCESS = 'request_access'
 REGISTRATION_MODE_DEFAULT = 'default'
+REGISTRATION_MODE_LEGACY_SFB = 'legacy_sfb'
 AUTH_ENDPOINTS = frozenset({
     'user.login', 'user.logged_in', 'user.logout', 'user.logged_out',
     'user.logged_out_page', 'user.request_reset', 'user.perform_reset',
@@ -33,7 +34,9 @@ def excluded_path():
         toolkit.request.path.startswith('/user/reset')
         or (
             toolkit.request.endpoint == 'user.register'
-            and registration_mode() == REGISTRATION_MODE_DEFAULT
+            and registration_mode() in {
+                REGISTRATION_MODE_DEFAULT, REGISTRATION_MODE_LEGACY_SFB,
+            }
         )
     )
 
@@ -47,13 +50,23 @@ def registration_mode():
     configured = str(toolkit.config.get(
         REGISTRATION_MODE_CONFIG, REGISTRATION_MODE_REQUEST_ACCESS
     )).strip().lower()
-    if configured == REGISTRATION_MODE_DEFAULT:
-        return REGISTRATION_MODE_DEFAULT
+    if configured in {REGISTRATION_MODE_DEFAULT, REGISTRATION_MODE_LEGACY_SFB}:
+        return configured
     return REGISTRATION_MODE_REQUEST_ACCESS
 
 
 def uses_request_access():
     return registration_mode() == REGISTRATION_MODE_REQUEST_ACCESS
+
+
+def uses_legacy_sfb_login():
+    return registration_mode() == REGISTRATION_MODE_LEGACY_SFB
+
+
+def uses_custom_login():
+    return registration_mode() in {
+        REGISTRATION_MODE_REQUEST_ACCESS, REGISTRATION_MODE_LEGACY_SFB,
+    }
 
 
 
@@ -63,6 +76,27 @@ def get_login_action():
     if not came_from or not came_from.startswith('/') or came_from.startswith('//'):
         came_from = toolkit.url_for('home.index')
     return toolkit.url_for('user.login', came_from=came_from)
+
+
+def get_legacy_sfb_login_action():
+    """Return CKAN's active repoze.who login handler for the legacy form."""
+    active_handler = getattr(g, 'login_handler', None)
+    if active_handler:
+        return active_handler
+
+    came_from = toolkit.request.args.get('came_from')
+    if not came_from or not came_from.startswith('/') or came_from.startswith('//'):
+        came_from = toolkit.url_for('home.index')
+
+    try:
+        friendly_form = toolkit.request.environ[
+            'repoze.who.plugins'
+        ]['friendlyform']
+        handler_path = friendly_form.login_handler_path
+    except (KeyError, TypeError, AttributeError):
+        return toolkit.url_for('user.login', came_from=came_from)
+
+    return toolkit.url_for(handler_path, came_from=came_from)
 
 
 def require_login_for_all():
@@ -80,7 +114,9 @@ def _is_authentication_endpoint():
     if endpoint in AUTH_ENDPOINTS or endpoint == 'static':
         return True
     if endpoint == 'user.register':
-        return registration_mode() == REGISTRATION_MODE_DEFAULT
+        return registration_mode() in {
+            REGISTRATION_MODE_DEFAULT, REGISTRATION_MODE_LEGACY_SFB,
+        }
 
     # repoze.who consumes these routes outside Flask in production. Custom
     # handler paths must also remain reachable to establish/clear a session.
@@ -224,9 +260,12 @@ class CloseForGuestsPlugin(plugins.SingletonPlugin):
         return {'is_user_login': is_user_login,
             'is_excluded': excluded_path,
             'get_login_action': get_login_action,
+            'get_legacy_sfb_login_action': get_legacy_sfb_login_action,
             'require_login_for_all': require_login_for_all,
             'close_for_guests_registration_mode': registration_mode,
             'close_for_guests_uses_request_access': uses_request_access,
+            'close_for_guests_uses_legacy_sfb_login': uses_legacy_sfb_login,
+            'close_for_guests_uses_custom_login': uses_custom_login,
             'close_for_guests_theme': close_for_guests_theme,
             'does_have_organization_helper': does_have_organization_helper
         }

@@ -47,6 +47,8 @@ To temporary patch the CKAN configuration for the duration of a test you can use
     def test_some_action():
         pass
 """
+import html
+import re
 from types import SimpleNamespace
 from urllib.parse import parse_qs, urlparse
 
@@ -89,6 +91,7 @@ def test_close_for_guests_theme(monkeypatch, config, expected):
         (None, "request_access"),
         ("request_access", "request_access"),
         ("default", "default"),
+        ("legacy_sfb", "legacy_sfb"),
         ("unexpected", "request_access"),
     ],
 )
@@ -359,17 +362,88 @@ def test_crc_default_mode_uses_standard_ckan_registration_ui(
 
 
 @pytest.mark.ckan_config("ckan.plugins", "close_for_guests")
+@pytest.mark.ckan_config(plugin.REGISTRATION_MODE_CONFIG, "legacy_sfb")
+@pytest.mark.ckan_config("ckan.auth.create_user_via_web", True)
+@pytest.mark.ckan_config("SECRET_KEY", "test_secret")
+@pytest.mark.usefixtures("with_plugins")
+@pytest.mark.parametrize("project_id", ["1153", "1368"])
+def test_legacy_sfb_mode_restores_v114_login_and_registration(
+    app, monkeypatch, project_id
+):
+    monkeypatch.setitem(toolkit.config, "ckanext.crc.project.id", project_id)
+
+    login = app.get("/user/login")
+    assert "Username or Email" in login.body
+    assert 'id="field-password"' in login.body
+    assert 'id="field-remember"' in login.body
+    assert '<form action="' in login.body
+    assert '<form action=""' not in login.body
+    assert "Request Access" not in login.body
+    assert "Create an Account" not in login.body
+    assert "Forgot your password?" not in login.body
+
+    registration = app.get("/user/register")
+    assert registration.status_code == 200
+    assert 'id="user-register-form"' in registration.body
+    assert app.get("/user/reset").status_code == 200
+
+
+@pytest.mark.ckan_config("ckan.plugins", "close_for_guests")
+@pytest.mark.ckan_config(plugin.REGISTRATION_MODE_CONFIG, "legacy_sfb")
+@pytest.mark.ckan_config("SECRET_KEY", "test_secret")
+@pytest.mark.usefixtures("with_plugins")
+def test_legacy_sfb_mode_does_not_enable_strict_api_gate(app):
+    response = app.get("/api/3/action/status_show")
+
+    assert response.status_code == 200
+
+
+@pytest.mark.ckan_config("ckan.plugins", "close_for_guests")
+@pytest.mark.ckan_config(plugin.REGISTRATION_MODE_CONFIG, "legacy_sfb")
+@pytest.mark.ckan_config("SECRET_KEY", "test_secret")
+@pytest.mark.usefixtures("with_plugins", "clean_db")
+def test_legacy_sfb_login_form_authenticates_with_ckan_handler(app):
+    password = "LegacyLoginPassword123"
+    user = factories.User(password=password)
+    login_page = app.get("/user/login")
+    action_match = re.search(r'<form action="([^"]+)"', login_page.body)
+    assert action_match is not None
+    action = html.unescape(action_match.group(1))
+
+    response = app.post(
+        action,
+        data={
+            "login": user["name"],
+            "password": password,
+            "remember": "63072000",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 302
+    me = app.get("/user/me", follow_redirects=False)
+    assert me.status_code == 302
+    assert "/user/login" not in me.location
+
+
+@pytest.mark.ckan_config("ckan.plugins", "close_for_guests")
 @pytest.mark.ckan_config(plugin.REQUIRE_LOGIN_CONFIG, True)
-@pytest.mark.ckan_config(plugin.REGISTRATION_MODE_CONFIG, "default")
 @pytest.mark.ckan_config("ckan.auth.create_user_via_web", True)
 @pytest.mark.ckan_config("SECRET_KEY", "test_secret")
 @pytest.mark.usefixtures("with_plugins", "clean_db")
-def test_default_mode_can_create_user_when_ckan_allows_self_registration(app):
+@pytest.mark.parametrize("registration_mode", ["default", "legacy_sfb"])
+def test_registration_mode_can_create_user_when_ckan_allows_self_registration(
+    app, monkeypatch, registration_mode
+):
+    monkeypatch.setitem(
+        toolkit.config, plugin.REGISTRATION_MODE_CONFIG, registration_mode
+    )
+    username = "{}-registered-user".format(registration_mode.replace("_", "-"))
     response = app.post(
         "/user/register",
         data={
             "save": "",
-            "name": "self-registered-user",
+            "name": username,
             "fullname": "Self Registered User",
             "email": "self-register@example.test",
             "password1": "TestPassword123",
@@ -380,9 +454,9 @@ def test_default_mode_can_create_user_when_ckan_allows_self_registration(app):
 
     assert response.status_code in (200, 302)
     created = toolkit.get_action("user_show")(
-        {"ignore_auth": True}, {"id": "self-registered-user"}
+        {"ignore_auth": True}, {"id": username}
     )
-    assert created["name"] == "self-registered-user"
+    assert created["name"] == username
 
 
 @pytest.mark.ckan_config("ckan.plugins", "close_for_guests")
