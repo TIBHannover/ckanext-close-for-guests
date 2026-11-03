@@ -2,3 +2,8 @@ custom-login-form-css:
   output: ckanext-close-for-guests/%(version)s_my.css
   contents:
     - loginForm.css
+
+legacy-sfb-login-form-css:
+  output: ckanext-close-for-guests/%(version)s_legacy_sfb_login.css
+  contents:
+    - legacySfbLoginForm.css

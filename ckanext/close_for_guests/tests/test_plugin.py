@@ -332,6 +332,7 @@ def test_request_access_mode_hides_public_registration_even_if_ckan_allows_it(ap
     assert "showInfoText(); return false" in login.body
     assert "Create an Account" not in login.body
     assert 'href="/user/register"' not in login.body
+    assert "legacy_sfb_login.css" not in login.body
     assert (
         login.body.index("Request Access")
         < login.body.index("Forgot your password?")
@@ -376,6 +377,9 @@ def test_legacy_sfb_mode_restores_v114_login_and_registration(
     assert "Username or Email" in login.body
     assert 'id="field-password"' in login.body
     assert 'id="field-remember"' in login.body
+    assert 'class="col-sm-5 custom_logon_form_box"' in login.body
+    assert 'class="col-sm-12 site-logo-box-on-login"' in login.body
+    assert "legacy_sfb_login.css" in login.body
     assert '<form action="' in login.body
     assert '<form action=""' not in login.body
     assert "Request Access" not in login.body

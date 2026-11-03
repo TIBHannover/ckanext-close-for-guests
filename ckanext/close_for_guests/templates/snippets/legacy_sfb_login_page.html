@@ -1,25 +1,37 @@
 {% import 'macros/form.html' as form %}
+{% asset 'ckanext-close-for-guests/legacy-sfb-login-form-css' %}
 
 {% set username_error = true if error_summary %}
 {% set password_error = true if error_summary %}
 
-<form action="{{ g.login_handler or h.get_legacy_sfb_login_action() }}" method="post">
-  {{ h.csrf_input() }}
-  {{ form.errors(errors=error_summary) }}
-
-  {{ form.input('login', label=_("Username or Email"), id='field-login', value="", error=username_error, classes=["control-medium"]) }}
-
-  {{ form.input('password', label=_("Password"), id='field-password', type="password", value="", error=password_error, classes=["control-medium"]) }}
-
-  {{ form.checkbox('remember', label=_("Remember me"), id='field-remember', checked=true, value="63072000") }}
-
-  {% if g.recaptcha_publickey %}
-    {% snippet "user/snippets/recaptcha.html", public_key=g.recaptcha_publickey %}
-  {% endif %}
-
-  <div class="form-actions">
-    {% block login_button %}
-    <button class="btn btn-primary" type="submit">{{ _('Login') }}</button>
-    {% endblock %}
+<div class="row">
+  <div class="col-sm-12 site-logo-box-on-login">
+    <img src="{{ h.url_for_static_or_external(g.site_logo) }}" alt="{{ g.site_title }}" title="{{ g.site_title }}" />
+    <h3>{{ g.site_title }}</h3>
   </div>
-</form>
+</div>
+
+<div class="row">
+  <div class="col-sm-5 custom_logon_form_box">
+    <form action="{{ g.login_handler or h.get_legacy_sfb_login_action() }}" method="post">
+      {{ h.csrf_input() }}
+      {{ form.errors(errors=error_summary) }}
+
+      {{ form.input('login', label=_("Username or Email"), id='field-login', value="", error=username_error, classes=["control-medium"]) }}
+
+      {{ form.input('password', label=_("Password"), id='field-password', type="password", value="", error=password_error, classes=["control-medium"]) }}
+
+      {{ form.checkbox('remember', label=_("Remember me"), id='field-remember', checked=true, value="63072000") }}
+
+      {% if g.recaptcha_publickey %}
+        {% snippet "user/snippets/recaptcha.html", public_key=g.recaptcha_publickey %}
+      {% endif %}
+
+      <div class="form-actions">
+        {% block login_button %}
+        <button class="btn btn-primary" type="submit">{{ _('Login') }}</button>
+        {% endblock %}
+      </div>
+    </form>
+  </div>
+</div>
